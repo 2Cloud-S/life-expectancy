@@ -6,14 +6,129 @@ execute:
   echo: false
 ---
 
+```{r}
+#| label: fit-years-model
+#| cache: true
 
-Candidates' lives are often affected by elections. Using data from the paper "Longevity Returns to Political Office" by Barfort, Klemmensen & Larsen (2019), which includes all candidates in U.S. gubernatorial elections after 1850 who were deceased as of 2012, we seek to create a model for forecasting longevity for political candidates.
+library(tidymodels)
+library(modeldata)
+
+data(governors)
+x <- governors
+
+fit_years <- linear_reg(engine = "lm") |>
+  fit(lived_after ~ sex + election_age, data = x)
+```
+
 
 ```{r setup}
 #| message: false
 library(tidyverse)
 library(primer.data)
+library(tidymodels)
+library(broom)
+library(gt)
+library(marginaleffects)
+
+x <- governors
 
 ```
+
+```{r}
+# Load required libraries
+library(tidyverse)
+
+# Set up a tibble of ages
+ages <- seq(35, 80, by = 1)
+
+# Coefficients from your model
+intercept <- 19.32338863
+age_coef <- -0.05631269
+sexMale_coef <- 53.29554022
+interaction_coef <- -0.79997911
+
+# Predictions
+predictions <- tibble(
+  election_age = ages,
+  Female = intercept + age_coef * election_age,
+  Male = intercept + age_coef * election_age + sexMale_coef + interaction_coef * election_age
+) |>
+  pivot_longer(cols = c(Female, Male), names_to = "sex", values_to = "predicted_years")
+
+# Plot
+ggplot(predictions, aes(x = election_age, y = predicted_years, color = sex)) +
+  geom_line(linewidth = 1.2) +
+  labs(
+    title = "Predicted Years Lived After Election by Sex and Age at Election",
+    x = "Age at Election",
+    y = "Predicted Years Lived After Election",
+    color = "Sex"
+  ) +
+  theme_minimal(base_size = 14)
+
+
+```
+
+
+Candidates' lives are often affected by elections. Using data from the paper "Longevity Returns to Political Office" by Barfort, Klemmensen & Larsen (2019), which includes all candidates in U.S. gubernatorial elections after 1945, we seek to create a model for forecasting longevity for political candidates. Because our data includes only candidates for governor, our estimated model might not generalize well to candidates for other political offices, such as mayor or city council. We model life expectancy after the election, measured in years lived after election day, as a linear function of a candidate’s sex and age at the time of election. A 50-year-old male political candidate can expect to live about 30 years after the election, plus-or-minus about 1 year.
+
+
+
+
+## Model Structure
+
+We represent our statistical model as:
+
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_k X_k + \varepsilon
+$$
+
+
+## Fitted Model
+
+The estimated linear regression model is:
+
+$$
+\hat{lived\_after} = 58.3 + 0.15 \cdot sex_{Male} - 0.68 \cdot election\_age
+$$
+
+
+## Regression Model Estimates
+
+```{r}
+#| label: regression-table
+#| cache: true
+
+# Extract model estimates as a tibble with confidence intervals
+fit_summary <- tidy(fit_years, conf.int = TRUE)
+
+# Create a formatted regression table
+fit_summary |>
+  select(term, estimate, conf.low, conf.high) |>
+  gt() |>
+  tab_header(
+    title = "Regression Model Estimates",
+    subtitle = "Predicting Years Lived After Election"
+  ) |>
+  fmt_number(
+    columns = c(estimate, conf.low, conf.high),
+    decimals = 2
+  ) |>
+  cols_label(
+    term = "Term",
+    estimate = "Estimate",
+    conf.low = "Lower 95% CI",
+    conf.high = "Upper 95% CI"
+  ) |>
+  tab_source_note(
+    source_note = "Source: 'governors' dataset from Barfort et al. (2019)"
+  ) |>
+  tab_caption(
+    caption = "Table: Estimated coefficients and 95% confidence intervals from a linear regression predicting years lived after election."
+  )
+```
+
+
+
 
 
