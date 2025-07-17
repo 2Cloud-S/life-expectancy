@@ -1,0 +1,19 @@
+---
+title: "Life Expectancy for Political Candidates"
+author: "Afnan K"
+format: html
+execute: 
+  echo: false
+---
+
+
+Candidates' lives are often affected by elections. Using data from the paper "Longevity Returns to Political Office" by Barfort, Klemmensen & Larsen (2019), which includes all candidates in U.S. gubernatorial elections after 1850 who were deceased as of 2012, we seek to create a model for forecasting longevity for political candidates.
+
+```{r setup}
+#| message: false
+library(tidyverse)
+library(primer.data)
+
+```
+
+
